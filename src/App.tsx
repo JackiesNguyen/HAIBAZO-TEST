@@ -21,28 +21,34 @@ const App = () => {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isTimerActive, setIsTimerActive] = useState(false);
   const [gameStatus, setGameStatus] = useState("LET'S PLAY"); // Trạng thái game
+  const [pointCount, setPointCount] = useState<number>(5); // Trạng thái để lưu số điểm nhập vào
 
   const startTimer = () => {
     setIsTimerActive(true);
     setElapsedTime(0);
   };
 
+  const handleChangePointCount = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPointCount(Number(e.target.value));
+  };
+
   const handleClickPlayGame = () => {
     setIsPlayGame(true);
-    generateRandomCircles();
+    generateRandomCircles(pointCount); // Sử dụng số điểm nhập vào
     startTimer();
     setGameStatus("LET'S PLAY"); // Reset trạng thái game
   };
 
   const handleClickRestart = () => {
-    generateRandomCircles();
-    setElapsedTime(0);
+    setIsPlayGame(true); // Đảm bảo game vẫn đang chơi
+    setElapsedTime(0); // Reset thời gian đã trôi qua
+    setIsTimerActive(true); // Bắt đầu bộ đếm thời gian
+    generateRandomCircles(pointCount); // Tạo lại các vòng tròn với số điểm nhập vào
     setGameStatus("LET'S PLAY"); // Reset trạng thái game khi khởi động lại
   };
 
-  const generateRandomCircles = () => {
+  const generateRandomCircles = (circleCount: number) => {
     const newCircles: ICircle[] = [];
-    const circleCount = 5;
 
     while (newCircles.length < circleCount) {
       const x = Math.random() * 400;
@@ -59,27 +65,11 @@ const App = () => {
         isClicked: false, // Khởi tạo là false
       };
 
-      if (!isOverlapping(newCircle, newCircles)) {
-        newCircles.push(newCircle);
-      }
+      // Bỏ phần kiểm tra trùng lặp
+      newCircles.push(newCircle);
     }
 
     setCircles(newCircles);
-  };
-
-  const isOverlapping = (
-    newCircle: ICircle,
-    existingCircles: ICircle[]
-  ): boolean => {
-    const circleSize = 40;
-    return existingCircles.some((circle) => {
-      return (
-        newCircle.x < circle.x + circleSize &&
-        newCircle.x + circleSize > circle.x &&
-        newCircle.y < circle.y + circleSize &&
-        newCircle.y + circleSize > circle.y
-      );
-    });
   };
 
   const handleButtonClick = (id: string) => {
@@ -151,7 +141,13 @@ const App = () => {
       </h2>
       <div className="flex items-center gap-5">
         <Label htmlFor="points">Points:</Label>
-        <Input type="number" id="points" value={5} readOnly />
+        <Input
+          type="number"
+          id="points"
+          onChange={handleChangePointCount}
+          disabled={isPlayGame}
+          value={pointCount}
+        />
       </div>
       <div className="flex items-center gap-5">
         <Label>Time:</Label>
@@ -162,10 +158,13 @@ const App = () => {
         {isPlayGame && (
           <div className="flex items-center gap-5">
             <Button onClick={handleClickRestart}>Restart</Button>
-            <Button className="w-30">Auto Play ON</Button>
+            {gameStatus !== "ALL CLEARED" && ( // Kiểm tra trạng thái game
+              <Button className="w-30">Auto Play ON</Button>
+            )}
           </div>
         )}
       </div>
+
       <div className="w-full h-[500px] border-2 border-black rounded-sm p-10">
         <div className="relative w-full h-full">
           {isPlayGame &&
