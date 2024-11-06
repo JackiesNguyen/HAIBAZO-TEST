@@ -236,7 +236,7 @@ const App = () => {
         ) : (
           <>
             <Button onClick={resetGame}>Restart</Button>
-            {gameStatus !== "ALL CLEARED" && (
+            {gameStatus !== "ALL CLEARED" && gameStatus !== "GAME OVER" && (
               <Button onClick={handleAutoPlay}>
                 {isAutoPlay ? "Auto Play OFF" : "Auto Play ON"}
               </Button>
@@ -276,9 +276,9 @@ const App = () => {
           ))}
       </div>
 
-      {isPlayGame && gameStatus !== "ALL CLEARED" && (
-        <div>Next: {nextButtonIndex}</div>
-      )}
+      {isPlayGame &&
+        gameStatus !== "ALL CLEARED" &&
+        gameStatus !== "GAME OVER" && <div>Next: {nextButtonIndex}</div>}
     </div>
   );
 };
