@@ -1,6 +1,6 @@
 # haibazo-test
 
-Link demo: [https://haibazo-test.vercel.app/](https://haibazo-test.vercel.app/)
+Link demo: [https://haibazo-test-rho.vercel.app/](https://haibazo-test-rho.vercel.app/)
 
 ## Getting Started
 
