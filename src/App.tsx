@@ -1,201 +1,97 @@
-import { useState, useEffect } from "react";
-import { Button } from "./components/ui/button";
-import { Input } from "./components/ui/input";
-import { Label } from "./components/ui/label";
+import { useEffect, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
-
-interface ICircle {
-  id: string;
-  x: number;
-  y: number;
-  countdown: number;
-  opacity: number;
-  isActive: boolean;
-  label: number;
-  isClicked: boolean; // Thêm thuộc tính để theo dõi nút đã được nhấn hay chưa
-}
+import { Button } from "./components/ui/button";
+import { Label } from "./components/ui/label";
+import { Input } from "./components/ui/input";
 
 const App = () => {
-  const [isPlayGame, setIsPlayGame] = useState(false);
-  const [circles, setCircles] = useState<ICircle[]>([]);
-  const [elapsedTime, setElapsedTime] = useState(0);
-  const [isTimerActive, setIsTimerActive] = useState(false);
-  const [gameStatus, setGameStatus] = useState("LET'S PLAY"); // Trạng thái game
-  const [pointCount, setPointCount] = useState<number>(5); // Trạng thái để lưu số điểm nhập vào
-
-  const startTimer = () => {
-    setIsTimerActive(true);
-    setElapsedTime(0);
-  };
-
-  const handleChangePointCount = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPointCount(Number(e.target.value));
-  };
-
-  const handleClickPlayGame = () => {
-    setIsPlayGame(true);
-    generateRandomCircles(pointCount); // Sử dụng số điểm nhập vào
-    startTimer();
-    setGameStatus("LET'S PLAY"); // Reset trạng thái game
-  };
-
-  const handleClickRestart = () => {
-    setIsPlayGame(true); // Đảm bảo game vẫn đang chơi
-    setElapsedTime(0); // Reset thời gian đã trôi qua
-    setIsTimerActive(true); // Bắt đầu bộ đếm thời gian
-    generateRandomCircles(pointCount); // Tạo lại các vòng tròn với số điểm nhập vào
-    setGameStatus("LET'S PLAY"); // Reset trạng thái game khi khởi động lại
-  };
-
-  const generateRandomCircles = (circleCount: number) => {
-    const newCircles: ICircle[] = [];
-
-    while (newCircles.length < circleCount) {
-      const x = Math.random() * 400;
-      const y = Math.random() * 400;
-
-      const newCircle: ICircle = {
-        id: uuidv4(),
-        x,
-        y,
-        countdown: 3,
-        opacity: 1,
-        isActive: true,
-        label: newCircles.length + 1,
-        isClicked: false, // Khởi tạo là false
-      };
-
-      // Bỏ phần kiểm tra trùng lặp
-      newCircles.push(newCircle);
-    }
-
-    setCircles(newCircles);
-  };
-
-  const handleButtonClick = (id: string) => {
-    setCircles((prevCircles) =>
-      prevCircles.map((circle) =>
-        circle.id === id
-          ? {
-              ...circle,
-              isActive: false,
-              isClicked: true,
-              countdown: 3,
-              opacity: 1,
-            } // Đánh dấu là đã nhấn
-          : circle
-      )
-    );
-
-    const activeCircles = circles.filter((circle) => circle.isActive);
-
-    const interval = setInterval(() => {
-      setCircles((prevCircles) =>
-        prevCircles.map((circle) =>
-          circle.id === id && circle.countdown > 0
-            ? {
-                ...circle,
-                countdown: Math.max(0, circle.countdown - 0.1),
-                opacity: Math.max(0, circle.opacity - 0.033),
-              }
-            : circle
-        )
-      );
-    }, 100);
-
-    setTimeout(() => {
-      setCircles((prevCircles) =>
-        prevCircles.map((circle) =>
-          circle.id === id ? { ...circle, isActive: false, opacity: 0 } : circle
-        )
-      );
-
-      clearInterval(interval);
-
-      if (activeCircles.length === 1) {
-        setIsTimerActive(false);
-        setGameStatus("ALL CLEARED");
-      }
-    }, 3000);
-  };
+  const [isPlayGame, setIsPlayGame] = useState<boolean>(false);
+  const [pointsCount, setPointsCount] = useState<number | "">(5);
+  const [time, setTime] = useState<number>(0);
+  const [buttonPositions, setButtonPositions] = useState<
+    { x: string; y: string; id: string }[]
+  >([]); // State lưu vị trí và id của các button
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
-    if (isTimerActive) {
+    if (isPlayGame) {
+      // Bắt đầu đếm thời gian khi bấm "Play"
       timer = setInterval(() => {
-        setElapsedTime((prev) => prev + 0.1);
-      }, 100);
+        setTime((prevTime) => {
+          const newTime = prevTime + 0.1;
+          return Math.round(newTime * 10) / 10;
+        });
+      }, 100); // Mỗi 100ms
     }
 
-    return () => clearInterval(timer);
-  }, [isTimerActive]);
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [isPlayGame]);
+
+  useEffect(() => {
+    if (isPlayGame) {
+      const positions = Array.from({ length: Number(pointsCount) }, () => ({
+        x: Math.floor(Math.random() * 90) + "%",
+        y: Math.floor(Math.random() * 90) + "%",
+        id: uuidv4(),
+      }));
+      setButtonPositions(positions);
+    }
+  }, [pointsCount, isPlayGame]); // Cập nhật lại vị trí khi pointsCount thay đổi
+
+  const handlePlayGame = () => {
+    setIsPlayGame(true);
+    setTime(0);
+  };
+
+  const renderButtons = () => {
+    return buttonPositions.map((position, index) => (
+      <Button
+        key={position.id} // Sử dụng id duy nhất từ uuidv4()
+        className="absolute w-12 h-12 bg-white border-2 border-orange-400 rounded-full text-black hover:bg-orange-400 hover:text-white"
+        style={{ top: position.y, left: position.x }}
+      >
+        {index + 1} {/* Hiển thị số thứ tự của button */}
+      </Button>
+    ));
+  };
 
   return (
     <div className="p-10 flex flex-col gap-5">
-      <h2
-        className={`font-bold text-lg ${
-          gameStatus === "ALL CLEARED" ? "text-green-500" : ""
-        }`}
-      >
-        {gameStatus}
-      </h2>
+      <h2>LET'S PLAY</h2>
       <div className="flex items-center gap-5">
         <Label htmlFor="points">Points:</Label>
         <Input
           type="number"
-          id="points"
-          onChange={handleChangePointCount}
+          value={pointsCount}
+          onChange={(e) => setPointsCount(Number(e.target.value))}
+          className="w-60"
+          min={1}
           disabled={isPlayGame}
-          value={pointCount}
         />
       </div>
       <div className="flex items-center gap-5">
-        <Label>Time:</Label>
-        <div className="px-3">{elapsedTime.toFixed(1)}s</div>
+        <Label htmlFor="time">Time:</Label>
+        <div className="px-2">{time}s</div>
       </div>
-      <div>
-        {!isPlayGame && <Button onClick={handleClickPlayGame}>Play</Button>}
-        {isPlayGame && (
-          <div className="flex items-center gap-5">
-            <Button onClick={handleClickRestart}>Restart</Button>
-            {gameStatus !== "ALL CLEARED" && ( // Kiểm tra trạng thái game
-              <Button className="w-30">Auto Play ON</Button>
-            )}
-          </div>
+      <div className="flex items-center gap-5">
+        {!isPlayGame ? (
+          <Button onClick={handlePlayGame}>Play</Button>
+        ) : (
+          <>
+            <Button>Restart</Button>
+            <Button>Auto Play ON</Button>
+          </>
         )}
       </div>
 
-      <div className="w-full h-[500px] border-2 border-black rounded-sm p-10">
-        <div className="relative w-full h-full">
-          {isPlayGame &&
-            circles.map((circle) => (
-              <Button
-                key={circle.id}
-                className={`w-12 h-12 text-black border border-orange-400 rounded-full absolute font-bold hover:bg-orange-400 ${
-                  circle.isClicked ? "bg-orange-400" : "bg-white"
-                }`} // Thêm điều kiện để thay đổi màu nền
-                style={{
-                  top: circle.y,
-                  left: circle.x,
-                  opacity: circle.opacity,
-                }}
-                onClick={() => handleButtonClick(circle.id)}
-                disabled={!circle.isActive}
-              >
-                {circle.isActive ? (
-                  circle.label
-                ) : (
-                  <div className="flex flex-col">
-                    <span className="text-sm">{circle.label}</span>
-                    <span className="text-white">
-                      {circle.countdown.toFixed(1)} s
-                    </span>
-                  </div>
-                )}
-              </Button>
-            ))}
-        </div>
+      {/* Render các button số chỉ một lần khi bấm "Play" */}
+      <div className="w-full h-[600px] border-2 border-black rounded-sm relative overflow-hidden flex flex-wrap gap-2">
+        {isPlayGame && renderButtons()}
       </div>
+
+      <div>Next: 1</div>
     </div>
   );
 };
